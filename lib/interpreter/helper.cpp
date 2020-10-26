@@ -8,6 +8,12 @@
 namespace SSVM {
 namespace Interpreter {
 
+struct Interpreter::CompiledContext {
+  CompiledContext(Interpreter *T) noexcept : _(T) { _->enterCompiledContext(); }
+  ~CompiledContext() noexcept { _->leaveCompiledContext(); }
+  Interpreter *_;
+};
+
 Expect<AST::InstrView::iterator>
 Interpreter::enterFunction(Runtime::StoreManager &StoreMgr,
                            const Runtime::Instance::FunctionInstance &Func,
@@ -88,9 +94,10 @@ Interpreter::enterFunction(Runtime::StoreManager &StoreMgr,
 
     const int Status = sigsetjmp(*TrapJump, true);
     if (Status == 0) {
-      SignalEnabler Enabler;
+      CompiledContext Compiled(this);
       Wrapper(&ExecutionContext, CompiledFunc.get(), Args.data(), Rets.data());
     }
+    assert(This == nullptr);
 
     TrapJump = std::move(OldTrapJump);
 
