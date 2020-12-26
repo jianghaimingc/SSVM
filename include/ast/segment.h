@@ -136,6 +136,9 @@ public:
   Expect<void> loadBinary(FileMgr &Mgr,
                           const ProposalConfigure &PConf) override;
 
+  /// Getter of Offset.
+  uint32_t getOffset() const { return Offset; }
+
   /// Getter of locals vector.
   Span<const std::pair<uint32_t, ValType>> getLocals() const { return Locals; }
 
@@ -148,6 +151,8 @@ public:
   const ASTNodeAttr NodeAttr = ASTNodeAttr::Seg_Code;
 
 private:
+  /// Offset of CodeSection
+  uint32_t Offset = 0;
   /// \name Data of CodeSegment node.
   /// @{
   uint32_t SegSize = 0;

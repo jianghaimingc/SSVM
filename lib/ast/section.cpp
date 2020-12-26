@@ -114,6 +114,7 @@ Expect<void> ElementSection::loadContent(FileMgr &Mgr,
 /// Load vector of code section. See "include/ast/section.h".
 Expect<void> CodeSection::loadContent(FileMgr &Mgr,
                                       const ProposalConfigure &PConf) {
+  Offset = Mgr.getOffset();
   return Section::loadToVector(Mgr, PConf, NodeAttr, Content);
 }
 

@@ -30,9 +30,11 @@ llvm_add_library(ssvmAOT
   ${CMAKE_THREAD_LIBS_INIT}
   LINK_COMPONENTS
   core
+  debuginfodwarf
   lto
   native
   nativecodegen
+  object
   option
   passes
   support

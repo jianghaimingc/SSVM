@@ -283,6 +283,9 @@ private:
 /// AST CodeSection node.
 class CodeSection : public Section {
 public:
+  /// Getter of Offset.
+  uint32_t getOffset() const { return Offset; }
+
   /// Getter of content vector.
   Span<const CodeSegment> getContent() const { return Content; }
 
@@ -298,6 +301,9 @@ protected:
                            const ProposalConfigure &PConf) override;
 
 private:
+  /// Offset of CodeSection
+  uint32_t Offset = 0;
+
   /// Vector of CodeSegment nodes.
   std::vector<CodeSegment> Content;
 };
