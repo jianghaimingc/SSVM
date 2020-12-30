@@ -12,12 +12,10 @@ Expect<AST::InstrView::iterator>
 Interpreter::enterFunction(Runtime::StoreManager &StoreMgr,
                            const Runtime::Instance::FunctionInstance &Func,
                            const AST::InstrView::iterator From) {
-  /// Get function type
-  const auto &FuncType = Func.getFuncType();
-
   if (Func.isHostFunction()) {
     /// Host function case: Push args and call function.
     auto &HostFunc = Func.getHostFunc();
+    const auto &FuncType = HostFunc.getFuncType();
 
     /// Get memory instance from current frame.
     /// It'll be nullptr if current frame is dummy frame or no memory instance
@@ -63,8 +61,9 @@ Interpreter::enterFunction(Runtime::StoreManager &StoreMgr,
     /// For host function case, the continuation will be the next.
     return From + 1;
   } else if (Func.isCompiledFunction()) {
-    auto Wrapper = Func.getFuncType().getSymbol();
     /// Compiled function case: Push frame with locals and args.
+    const auto &ModInst = **StoreMgr.getModule(Func.getModuleAddr());
+    const auto &FuncType = **ModInst.getFuncType(Func.getFuncTypeIndex());
     const size_t ArgsN = FuncType.Params.size();
     const size_t RetsN = FuncType.Returns.size();
 
@@ -78,7 +77,6 @@ Interpreter::enterFunction(Runtime::StoreManager &StoreMgr,
 
     {
       CurrentStore = &StoreMgr;
-      const auto &ModInst = **StoreMgr.getModule(Func.getModuleAddr());
       ExecutionContext.Memory = ModInst.MemoryPtr;
       ExecutionContext.Globals = ModInst.GlobalsPtr.data();
     }
@@ -88,6 +86,7 @@ Interpreter::enterFunction(Runtime::StoreManager &StoreMgr,
 
     const int Status = sigsetjmp(*TrapJump, true);
     if (Status == 0) {
+      auto Wrapper = FuncType.getSymbol();
       SignalEnabler Enabler;
       Wrapper(&ExecutionContext, Func.getSymbol().get(), Args.data(),
               Rets.data());
@@ -112,6 +111,8 @@ Interpreter::enterFunction(Runtime::StoreManager &StoreMgr,
     return From + 1;
   } else {
     /// Native function case: Push frame with locals and args.
+    const auto &ModInst = **StoreMgr.getModule(Func.getModuleAddr());
+    const auto &FuncType = **ModInst.getFuncType(Func.getFuncTypeIndex());
     StackMgr.pushFrame(Func.getModuleAddr(),   /// Module address
                        FuncType.Params.size(), /// Arguments num
                        FuncType.Returns.size() /// Returns num
