@@ -15,6 +15,7 @@ target_include_directories(ssvmHostModuleWasi
 
 target_link_libraries(ssvmHostModuleWasi
   PUBLIC
+  ssvmPlugin
   Threads::Threads
 )
 

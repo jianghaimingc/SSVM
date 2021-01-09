@@ -24,3 +24,11 @@
     (defined(__APPLE__) && defined(__MACH__))
 #define SSVM_OS_MACOS 1
 #endif
+
+#define SSVM_ATTRIBUTE_WEAK [[gnu::weak]]
+
+#ifdef SSVM_OS_WINDOWS
+#define SSVM_SYMBOL_EXPORT [[gnu::dllexport]]
+#else
+#define SSVM_SYMBOL_EXPORT [[gnu::visibility("default")]]
+#endif
