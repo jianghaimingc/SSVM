@@ -324,6 +324,7 @@ void SpecTest::run(std::string_view Proposal, std::string_view UnitName) {
   /// Command processing. Return true for expected result.
   auto RunCommand = [&](const rapidjson::Value &Cmd) {
     /// Line number in wast: Cmd["line"].Get<uint32_t>()
+    std::cout << " ----- line # " << Cmd["line"].Get<uint32_t>() << std::endl;
     if (const auto Type = Cmd.FindMember("type"s); Type != Cmd.MemberEnd()) {
       switch (resolveCommand(Type->value.Get<std::string>())) {
       case SpecTest::CommandID::Module: {
