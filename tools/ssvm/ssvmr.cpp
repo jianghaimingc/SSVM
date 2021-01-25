@@ -5,6 +5,7 @@
 #include "common/version.h"
 #include "host/ssvm_process/processmodule.h"
 #include "host/wasi/wasimodule.h"
+#include "plugin/plugin.h"
 #include "po/argument_parser.h"
 #include "vm/vm.h"
 
@@ -53,19 +54,34 @@ int main(int Argc, const char *Argv[]) {
   PO::Option<PO::Toggle> AllowCmdAll(PO::Description(
       "Allow all commands called from ssvm_process host functions."sv));
 
+  std::vector<SSVM::Plugin::Plugin> Plugins;
+  for (const auto &PluginPath : SSVM::Plugin::Plugin::enumerate(
+           std::filesystem::current_path() / "plugins"sv)) {
+    if (auto Plugin = SSVM::Plugin::Plugin::load(PluginPath)) {
+      LOG(INFO) << "plugin "sv << Plugin->getName() << ' '
+                << Plugin->getVersion() << " loaded"sv;
+      Plugins.push_back(std::move(*Plugin));
+    }
+  }
+
   auto Parser = PO::ArgumentParser();
-  if (!Parser.add_option(SoName)
-           .add_option(Args)
-           .add_option("reactor"sv, Reactor)
-           .add_option("dir"sv, Dir)
-           .add_option("env"sv, Env)
-           .add_option("enable-bulk-memory"sv, BulkMemoryOperations)
-           .add_option("enable-reference-types"sv, ReferenceTypes)
-           .add_option("enable-simd"sv, SIMD)
-           .add_option("enable-all"sv, All)
-           .add_option("allow-command"sv, AllowCmd)
-           .add_option("allow-command-all"sv, AllowCmdAll)
-           .parse(Argc, Argv)) {
+  Parser.add_option(SoName)
+      .add_option(Args)
+      .add_option("reactor"sv, Reactor)
+      .add_option("dir"sv, Dir)
+      .add_option("env"sv, Env)
+      .add_option("enable-bulk-memory"sv, BulkMemoryOperations)
+      .add_option("enable-reference-types"sv, ReferenceTypes)
+      .add_option("enable-simd"sv, SIMD)
+      .add_option("enable-all"sv, All)
+      .add_option("allow-command"sv, AllowCmd)
+      .add_option("allow-command-all"sv, AllowCmdAll);
+
+  for (const auto &Plugin : Plugins) {
+    Plugin.RegisterArgument(Parser);
+  }
+
+  if (!Parser.parse(Argc, Argv)) {
     return EXIT_FAILURE;
   }
   if (Parser.isVersion()) {
@@ -110,6 +126,13 @@ int main(int Argc, const char *Argv[]) {
   WasiMod->getEnv().init(Dir.value(),
                          InputPath.filename().replace_extension("wasm"sv),
                          Args.value(), Env.value());
+
+  std::vector<std::unique_ptr<SSVM::Runtime::ImportObject>> PluginHostModules;
+
+  for (const auto &Plugin : Plugins) {
+    PluginHostModules.push_back(Plugin.AllocateHostModule());
+    VM.registerModule(*PluginHostModules.back());
+  }
 
   if (!Reactor.value()) {
     // command mode
