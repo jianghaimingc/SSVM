@@ -21,6 +21,7 @@ option(BUILD_TESTS "Generate build targets for the ssvm unit tests." OFF)
 
 # List of SSVM runtimes
 option(SSVM_DISABLE_AOT_RUNTIME "Disable SSVM LLVM-based ahead of time compilation runtime." OFF)
+option(SSVM_DISABLE_HOST_FUNCTIONS "Disable all SSVM host functions." OFF)
 
 # Macro for copying directory.
 macro(configure_files srcDir destDir)
